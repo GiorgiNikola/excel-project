@@ -1,6 +1,7 @@
 package com.excelproject.service;
 
 import com.excelproject.model.Employee;
+import jakarta.servlet.ServletOutputStream;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -10,10 +11,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,24 +65,19 @@ public class ExcelService {
             FileOutputStream fos = new FileOutputStream(fileLocation);
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet();
+
             sheet.setColumnWidth(0, 6000);
             sheet.setColumnWidth(1, 6000);
+
             Row row = sheet.createRow(0);
-            Cell cell = row.createCell(0);
-            cell.setCellValue("Department");
-            cell = row.createCell(1);
-            cell.setCellValue("Average Salary");
+            row.createCell(0).setCellValue("Department");
+            row.createCell(1).setCellValue("Average Salary");
             Map<String,Double> averageSalary = employeeService.getDepartmentsAverageSalary();
             int rowNum = 1;
             for (Map.Entry<String, Double> entry : averageSalary.entrySet()) {
-                int cellNum = 0;
-                row = sheet.createRow(rowNum);
-                cell = row.createCell(cellNum);
-                cell.setCellValue(entry.getKey());
-                cellNum++;
-                cell = row.createCell(cellNum);
-                cell.setCellValue(entry.getValue());
-                rowNum++;
+                row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(entry.getKey());
+                row.createCell(1).setCellValue(entry.getValue());
             }
             workbook.write(fos);
             fos.flush();
@@ -94,4 +87,17 @@ public class ExcelService {
         }
     }
 
+    public byte[] generateExcelByteArr() {
+        File file = new File("temp.xlsx");
+
+        if (!file.exists()) {
+            throw new RuntimeException("Excel file not found: " + file.getAbsolutePath());
+        }
+
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            return fileInputStream.readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read Excel file", e);
+        }
+    }
 }
